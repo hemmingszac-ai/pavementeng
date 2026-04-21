@@ -1,0 +1,690 @@
+import { useState } from "react";
+
+const BLUE = "#1a56a0";
+const RED = "#c0152a";
+const BLACK = "#1a1a1a";
+const LIGHT_BLUE = "#e8f0fb";
+const LIGHT_RED = "#fdf0f1";
+
+const style = {
+  app: { fontFamily: "'Georgia', serif", maxWidth: 820, margin: "0 auto", padding: "24px 16px", background: "#fafafa", minHeight: "100vh", color: BLACK },
+  progress: { display: "flex", gap: 6, marginBottom: 28, flexWrap: "wrap" },
+  dot: (active, done) => ({ width: 32, height: 8, borderRadius: 4, background: done ? BLUE : active ? "#7aabf0" : "#dde6f5", transition: "background 0.3s", cursor: "pointer" }),
+  card: { background: "#fff", borderRadius: 12, padding: "28px 28px 22px", boxShadow: "0 2px 12px rgba(26,86,160,0.08)", marginBottom: 22, border: "1px solid #e3ecfa" },
+  h1: { fontSize: 26, fontWeight: 700, color: BLUE, marginBottom: 6, letterSpacing: "-0.3px" },
+  h2: { fontSize: 20, fontWeight: 700, color: BLUE, marginTop: 26, marginBottom: 10, borderBottom: `2px solid ${LIGHT_BLUE}`, paddingBottom: 6 },
+  h3: { fontSize: 16, fontWeight: 700, color: BLUE, marginTop: 18, marginBottom: 8 },
+  p: { lineHeight: 1.75, marginBottom: 10, fontSize: 15, color: BLACK },
+  redNote: { background: LIGHT_RED, borderLeft: `4px solid ${RED}`, padding: "10px 14px", borderRadius: "0 8px 8px 0", marginBottom: 14, color: RED, fontSize: 14, fontWeight: 600 },
+  blueNote: { background: LIGHT_BLUE, borderLeft: `4px solid ${BLUE}`, padding: "10px 14px", borderRadius: "0 8px 8px 0", marginBottom: 14, color: BLUE, fontSize: 14 },
+  eqBox: { background: "#f4f8ff", border: `1px solid #c5d9f5`, borderRadius: 10, padding: "14px 18px", marginBottom: 16, fontFamily: "monospace" },
+  eqMain: { fontSize: 18, fontWeight: 700, color: BLUE, marginBottom: 10, letterSpacing: 0.5 },
+  varRow: { display: "flex", gap: 8, alignItems: "flex-start", marginBottom: 6, fontSize: 14 },
+  varName: { fontWeight: 700, color: BLUE, minWidth: 100, fontFamily: "monospace", fontSize: 13 },
+  varDesc: { color: BLACK, lineHeight: 1.5 },
+  navRow: { display: "flex", gap: 10, marginTop: 24 },
+  btn: (primary) => ({ padding: "10px 24px", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: 15, fontFamily: "'Georgia', serif", background: primary ? BLUE : "#e3ecfa", color: primary ? "#fff" : BLUE, transition: "all 0.2s" }),
+  quizCard: { background: "#f8fbff", border: `2px solid #c5d9f5`, borderRadius: 12, padding: "20px 22px", marginBottom: 16 },
+  quizQ: { fontWeight: 700, fontSize: 16, marginBottom: 14, color: BLACK, lineHeight: 1.5 },
+  optBtn: (selected, correct, revealed) => ({
+    display: "block", width: "100%", textAlign: "left", padding: "10px 14px", borderRadius: 8, marginBottom: 8,
+    border: `2px solid ${revealed ? (correct ? "#2a8a4a" : selected ? RED : "#dde6f5") : selected ? BLUE : "#dde6f5"}`,
+    background: revealed ? (correct ? "#edfaf2" : selected ? LIGHT_RED : "#fff") : selected ? LIGHT_BLUE : "#fff",
+    cursor: revealed ? "default" : "pointer", fontSize: 14, fontFamily: "'Georgia', serif", color: BLACK,
+    fontWeight: selected || (revealed && correct) ? 700 : 400, transition: "all 0.2s"
+  }),
+  explanation: { background: "#edfaf2", border: "1px solid #2a8a4a", borderRadius: 8, padding: "12px 14px", marginTop: 10, fontSize: 14, color: "#1a5c30", lineHeight: 1.6 },
+  wrongExp: { background: LIGHT_RED, border: `1px solid ${RED}`, borderRadius: 8, padding: "12px 14px", marginTop: 10, fontSize: 14, color: RED, lineHeight: 1.6 },
+  tag: { display: "inline-block", background: LIGHT_BLUE, color: BLUE, borderRadius: 20, padding: "2px 12px", fontSize: 12, fontWeight: 700, marginRight: 6, marginBottom: 6 },
+  tableWrap: { overflowX: "auto", marginBottom: 16 },
+  table: { width: "100%", borderCollapse: "collapse", fontSize: 14 },
+  th: { background: BLUE, color: "#fff", padding: "8px 12px", textAlign: "left" },
+  td: { padding: "8px 12px", borderBottom: "1px solid #e3ecfa", verticalAlign: "top" },
+  tdAlt: { padding: "8px 12px", borderBottom: "1px solid #e3ecfa", verticalAlign: "top", background: "#f4f8ff" },
+  sectionBadge: { fontSize: 12, fontWeight: 700, color: "#fff", background: BLUE, borderRadius: 4, padding: "2px 8px", marginRight: 8 },
+};
+
+// ── SECTIONS ────────────────────────────────────────────────────────────────
+const sections = [
+  // 0 — INTRO
+  {
+    title: "Welcome",
+    content: () => (
+      <div>
+        <div style={style.card}>
+          <div style={style.h1}>📚 ENCN415 — Interactive Study Guide</div>
+          <p style={style.p}>This guide will walk you through every lecture topic clearly — with <span style={{color:BLUE,fontWeight:700}}>plain-English explanations</span>, <span style={{fontWeight:700}}>equations broken down variable by variable</span>, and <span style={{color:RED,fontWeight:700}}>quiz questions that change like the midterm will.</span></p>
+          <div style={style.redNote}>⚠️ Red boxes = key examinable points. Don't skip these.</div>
+          <div style={style.blueNote}>💡 Blue boxes = useful context to build your understanding.</div>
+          <p style={{...style.p, marginTop:12}}>We'll cover these lectures in order:</p>
+          <div style={{marginBottom:8}}>
+            {["L1: Intro to Pavement Design","L2: Bitumen","L3: Aggregates","L4: Volumetric Properties","L5: Superpave Mix Design","L6: APRG18","L7: Recycling","L8: Hot-in-Place Recycling","L9: Stabilisation","L10: Materials Characterisation","L11: Stresses in Flexible Pavements"].map((t,i)=>(
+              <span key={i} style={{...style.tag, marginBottom:6}}>{t}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+    ),
+    quiz: []
+  },
+  // 1 — PAVEMENT STRUCTURE
+  {
+    title: "L1: Pavement Structure",
+    content: () => (
+      <div>
+        <div style={style.card}>
+          <div style={style.h1}>Lecture 1 — Introduction to Pavement Engineering</div>
+          <div style={style.h2}>🏗️ The Layer System</div>
+          <p style={style.p}>A pavement is a <b>layered structure</b> that sits on top of natural soil (the subgrade). Its whole job is to take a concentrated truck load and spread it wide enough that the soil below doesn't deform permanently.</p>
+          <div style={style.blueNote}>Think of it like stacking pancakes — each layer spreads the load wider so the ground underneath barely feels the truck above.</div>
+          <div style={style.tableWrap}><table style={style.table}>
+            <thead><tr>
+              <th style={style.th}>Layer</th><th style={style.th}>What it does</th><th style={style.th}>Key property</th>
+            </tr></thead>
+            <tbody>
+              {[
+                ["Surface / Wearing Course","What tyres touch. Must be smooth, grippy, waterproof, durable.","Texture, skid resistance, impermeability"],
+                ["Base Course","Main structural layer — takes most of the load.","Stiffness / strength (resilient modulus)"],
+                ["Subbase","Cheaper support layer. Helps with drainage and frost protection.","Gradation, drainage"],
+                ["Subgrade","The natural soil everything sits on. Can't be chosen, only improved.","CBR, resilient modulus (Mr)"],
+              ].map(([a,b,c],i)=>(
+                <tr key={i}><td style={i%2===0?style.td:style.tdAlt}><b>{a}</b></td><td style={i%2===0?style.td:style.tdAlt}>{b}</td><td style={i%2===0?style.td:style.tdAlt}>{c}</td></tr>
+              ))}
+            </tbody>
+          </table></div>
+          <div style={style.redNote}>🔴 KEY: The subgrade is the foundation of everything. A weak subgrade means you need thicker layers above. The whole design is about compensating for what's underneath.</div>
+
+          <div style={style.h2}>📋 Types of Pavement</div>
+          <div style={style.h3}>1. Flexible Pavement (Asphalt)</div>
+          <p style={style.p}>Made of asphalt layers over crushed gravel. It <b>bends slightly</b> under load and recovers — like a diving board. Load spreads through the layers in a pyramid shape.</p>
+          <p style={style.p}>Three sub-types:</p>
+          <div style={style.tableWrap}><table style={style.table}>
+            <thead><tr><th style={style.th}>Sub-type</th><th style={style.th}>Structure</th><th style={style.th}>Used where</th></tr></thead>
+            <tbody>
+              {[
+                ["Unbound Gravel Base","Thin asphalt/chip seal over gravel","Rural/low-volume roads"],
+                ["Structural Asphalt",">100mm of asphalt over granular base","Urban roads, highways"],
+                ["Asphalt over CTB","Asphalt + Cement Treated Base (called 'upside-down pavement')","Heavy traffic roads"],
+              ].map(([a,b,c],i)=>(
+                <tr key={i}><td style={i%2===0?style.td:style.tdAlt}><b>{a}</b></td><td style={i%2===0?style.td:style.tdAlt}>{b}</td><td style={i%2===0?style.td:style.tdAlt}>{c}</td></tr>
+              ))}
+            </tbody>
+          </table></div>
+          <div style={style.blueNote}>💡 "Upside-down pavement" = the stiff layer (CTB) is at the bottom, soft granular layer in the middle. This protects the CTB from surface shrinkage cracking.</div>
+
+          <div style={style.h3}>2. Rigid Pavement (Concrete)</div>
+          <p style={style.p}>A thick Portland Cement Concrete (PCC) slab. Acts like a <b>beam</b> — it bridges over weak spots rather than bending into them. The slab distributes load over a large area all at once.</p>
+          <div style={style.redNote}>🔴 KEY: Rigid pavement failure is controlled by <b>fatigue cracking</b>. The stress ratio (applied stress / flexural strength) determines life. If stress ratio &lt; 0.45 → infinite life (no fatigue failure).</div>
+
+          <div style={style.h3}>3. Composite Pavement</div>
+          <p style={style.p}>Asphalt surface on top of a concrete base. Best of both worlds — smooth surface + rigid load distribution. Common when resurfacing old concrete roads.</p>
+
+          <div style={style.h2}>⚖️ Flexible vs. Rigid — The Key Differences</div>
+          <div style={style.tableWrap}><table style={style.table}>
+            <thead><tr><th style={style.th}>Property</th><th style={style.th}>Flexible</th><th style={style.th}>Rigid</th></tr></thead>
+            <tbody>
+              {[
+                ["Load distribution","Gradual — pyramid shape through layers","Slab acts as beam — wide area at once"],
+                ["Pressure under tyre","Uniform (flexible plate)","Non-uniform — higher at centre of rigid plate"],
+                ["Surface deflection","More deflection","~78.5% of flexible deflection (less)"],
+                ["Initial cost","Lower ✓","Higher"],
+                ["Durability","Lower — needs more maintenance","Higher — lasts much longer"],
+                ["Failure mode","Fatigue cracking, rutting","Fatigue cracking in slab, pumping"],
+              ].map(([a,b,c],i)=>(
+                <tr key={i}><td style={i%2===0?style.td:style.tdAlt}><b>{a}</b></td><td style={i%2===0?style.td:style.tdAlt}>{b}</td><td style={i%2===0?style.td:style.tdAlt}>{c}</td></tr>
+              ))}
+            </tbody>
+          </table></div>
+          <div style={style.redNote}>🔴 EXAM TRAP: Rigid pavements have LESS surface deflection than flexible (78.5% as much). This is because pressure at the centre of a rigid plate is only half the average — it's distributed more evenly.</div>
+        </div>
+      </div>
+    ),
+    quiz: [
+      {
+        q: "A rigid pavement and a flexible pavement carry the same tyre load. Which has MORE surface deflection at the centre?",
+        opts: ["Rigid pavement","Flexible pavement","They are always equal","It depends on subgrade CBR"],
+        correct: 1,
+        exp: "Flexible pavement deflects more. The rigid slab acts like a beam and distributes load over a wider area, so the pressure at the centre is only half the average value. This means the deflection under a rigid plate is about 78.5% of that under a flexible plate — so flexible deflects MORE."
+      },
+      {
+        q: "Why is an asphalt-over-CTB pavement called an 'upside-down' pavement?",
+        opts: ["Because asphalt is placed before the subgrade is prepared","Because the stiff CTB layer is at the bottom, not the top","Because it is built from the subgrade upward","Because the wearing course is rougher than normal"],
+        correct: 1,
+        exp: "In a conventional flexible pavement, the stiffest material (asphalt) is at the top. In a CTB pavement, the stiff cement-treated base is at the bottom beneath the granular layer — hence 'upside-down'. This protects the CTB from shrinkage cracking caused by temperature at the surface."
+      },
+      {
+        q: "What is the main function of the subbase layer in a flexible pavement?",
+        opts: ["Provide skid resistance","Provide structural support, drainage, and frost protection","Carry tensile stresses at the bottom of the pavement","Replace the wearing course on low-volume roads"],
+        correct: 1,
+        exp: "The subbase provides structural support, aids drainage of surface water, controls frost effects, and reduces the impact of subgrade volume changes. It's essentially a transition layer between the expensive engineered base and the natural soil."
+      },
+      {
+        q: "For a rigid pavement, if the stress ratio is calculated as 0.40, what does this mean for fatigue life?",
+        opts: ["The slab will fail within 1,000 load cycles","The slab will fail within 100,000 load cycles","The slab can sustain an infinite number of load cycles without fatigue failure","The stress ratio must be recalculated"],
+        correct: 2,
+        exp: "A stress ratio below 0.45 means the concrete slab can sustain infinite load repetitions without fatigue failure. The stress ratio = applied stress / flexural strength of concrete. Keeping it below 0.45 is the design target for long-life rigid pavements."
+      }
+    ]
+  },
+  // 2 — TRAFFIC & DISTRESS
+  {
+    title: "L1: Traffic & Distress",
+    content: () => (
+      <div>
+        <div style={style.card}>
+          <div style={style.h1}>Lecture 1 — Traffic Loading & Pavement Distress</div>
+
+          <div style={style.h2}>🚛 Traffic Loading — ESALs</div>
+          <p style={style.p}>Cars barely damage pavements. A single heavy truck does as much damage as <b>thousands of cars</b>. So instead of counting every vehicle, we convert all traffic into <b>Equivalent Single Axle Loads (ESALs)</b> — the number of standard 80 kN axle passes that cause the equivalent damage.</p>
+          <div style={style.redNote}>🔴 Standard axle = 80 kN (18,000 lb), Single Axle, Dual Tyre (SADT). This is the reference everything is compared against.</div>
+
+          <div style={style.h3}>The Fourth Power Law</div>
+          <p style={style.p}>Damage doesn't scale linearly with load — it scales with the <b>4th power</b>. Double the axle load = 16× the damage.</p>
+          <div style={style.eqBox}>
+            <div style={style.eqMain}>LEF = (Axle Load / Standard Axle Load)⁴</div>
+            <div style={{borderTop:"1px solid #c5d9f5", marginTop:10, paddingTop:10}}>
+              <div style={style.varRow}><span style={style.varName}>LEF</span><span style={style.varDesc}>Load Equivalency Factor — how damaging this axle is compared to the standard 80 kN axle</span></div>
+              <div style={style.varRow}><span style={style.varName}>Axle Load</span><span style={style.varDesc}>The actual load on the axle being assessed (kN)</span></div>
+              <div style={style.varRow}><span style={style.varName}>Standard Axle</span><span style={style.varDesc}>80 kN (the reference standard axle)</span></div>
+              <div style={style.varRow}><span style={style.varName}>Power of 4</span><span style={style.varDesc}><span style={{color:RED,fontWeight:700}}>This is the key — damage is NOT linear with load. It's exponential (4th power).</span></span></div>
+            </div>
+          </div>
+          <div style={style.blueNote}>Example: An axle carrying 160 kN (double the standard): LEF = (160/80)⁴ = 2⁴ = <b>16</b>. That one axle does 16× more damage than the standard axle.</div>
+
+          <div style={style.h3}>Axle Configurations — Know These</div>
+          <div style={style.tableWrap}><table style={style.table}>
+            <thead><tr><th style={style.th}>Name</th><th style={style.th}>Code</th><th style={style.th}>Description</th></tr></thead>
+            <tbody>
+              {[
+                ["Single Axle Single Tyre","SAST","One axle, one tyre per side. Least common on trucks."],
+                ["Single Axle Dual Tyre","SADT","One axle, twin tyres per side. The 80 kN standard is SADT."],
+                ["Tandem Axle Dual Tyre","TADT","Two axles close together, twin tyres. Common on semi-trailers."],
+                ["Tridem / Triaxle Dual Tyre","TRDT","Three axles in a group. Very heavy loads."],
+                ["Quad Axle Dual Tyre","QADT","Four axles in a group."],
+              ].map(([a,b,c],i)=>(
+                <tr key={i}><td style={i%2===0?style.td:style.tdAlt}><b>{a}</b></td><td style={i%2===0?style.td:style.tdAlt}><code style={{color:BLUE}}>{b}</code></td><td style={i%2===0?style.td:style.tdAlt}>{c}</td></tr>
+              ))}
+            </tbody>
+          </table></div>
+          <div style={style.redNote}>🔴 Tandem and tridem axles spread load more — so they do LESS damage per axle than a single axle of the same total weight. This is why trucking companies use more axles.</div>
+
+          <div style={style.h3}>Vehicle Speed and Asphalt Behaviour</div>
+          <p style={style.p}>Asphalt is <b>viscoelastic</b> — it behaves differently depending on how fast load is applied:</p>
+          <div style={style.tableWrap}><table style={style.table}>
+            <thead><tr><th style={style.th}>Speed</th><th style={style.th}>Loading rate</th><th style={style.th}>Asphalt stiffness</th><th style={style.th}>Risk</th></tr></thead>
+            <tbody>
+              <tr><td style={style.td}><b>Fast (motorway)</b></td><td style={style.td}>High</td><td style={style.td}>High (more elastic)</td><td style={style.td}>Fatigue cracking</td></tr>
+              <tr><td style={style.tdAlt}><b>Slow (intersection/carpark)</b></td><td style={style.tdAlt}>Low</td><td style={style.tdAlt}>Low (more viscous)</td><td style={style.tdAlt}>Rutting / shoving</td></tr>
+            </tbody>
+          </table></div>
+          <div style={style.redNote}>🔴 This is why intersections and car parks rut more than open highway, even if the same trucks use both. Slow speed = low stiffness = permanent deformation.</div>
+
+          <div style={style.h2}>💥 Pavement Distress Mechanisms</div>
+          <p style={style.p}>There are 4 categories of distress — know what <b>causes</b> each and which <b>pavement type</b> it affects:</p>
+
+          <div style={style.h3}>1. Load-Related Distress</div>
+          <div style={style.tableWrap}><table style={style.table}>
+            <thead><tr><th style={style.th}>Distress</th><th style={style.th}>Pavement</th><th style={style.th}>Mechanism</th><th style={style.th}>Critical response</th></tr></thead>
+            <tbody>
+              <tr><td style={style.td}><b>Fatigue cracking</b></td><td style={style.td}>Flexible</td><td style={style.td}>Repeated bending → cracks start at bottom of asphalt → propagate up → alligator cracking → potholes</td><td style={style.tdAlt} style={{color:RED,fontWeight:700}}><b>Max horizontal tensile strain at bottom of asphalt layer</b></td></tr>
+              <tr><td style={style.tdAlt}><b>Rutting</b></td><td style={style.tdAlt}>Flexible</td><td style={style.tdAlt}>Permanent deformation accumulating in wheel tracks</td><td style={style.tdAlt} style={{color:RED,fontWeight:700}}><b>Vertical compressive strain at top of subgrade</b></td></tr>
+              <tr><td style={style.td}><b>Faulting</b></td><td style={style.td}>Rigid</td><td style={style.td}>Differential settlement between concrete slabs</td><td style={style.td}>—</td></tr>
+            </tbody>
+          </table></div>
+
+          <div style={style.h3}>2. Temperature-Related</div>
+          <p style={style.p}><b>Low temp cracking</b> — asphalt becomes brittle in cold weather and cracks (transverse cracks). <b>High temp joint distress</b> — thermal expansion can cause buckling near joints in rigid pavements.</p>
+
+          <div style={style.h3}>3. Moisture-Related</div>
+          <p style={style.p}><b>Pumping</b> (rigid pavements) — water gets under the slab, and as the slab flexes under load, it pumps water out, carrying fine soil particles with it. This creates voids under the slab → eventual collapse.</p>
+          <p style={style.p}><b>D-cracking</b> — aggregate absorbs water, freezes, expands → deterioration along joints.</p>
+
+          <div style={style.h3}>4. Age-Related</div>
+          <p style={style.p}><b>Oxidation/hardening</b> of bitumen over time → asphalt becomes brittle → block cracking and ravelling.</p>
+
+          <div style={style.h2}>🎯 Factors Affecting Pavement Design — The Big 5</div>
+          <div style={style.redNote}>🔴 You must know all 5 — exam questions often ask "which factor affects X performance?"</div>
+          {[
+            ["1. Traffic","Volume + axle loads + tyre pressure + speed + axle configuration"],
+            ["2. Environmental conditions","Temperature (affects asphalt stiffness) + moisture (affects subgrade strength + frost)"],
+            ["3. Material properties","Stiffness (resilient modulus), fatigue resistance, creep compliance"],
+            ["4. Construction & maintenance","Quality of compaction, drainage, surface condition management"],
+            ["5. Failure criteria","The definition of 'failed' — determines how thick you design it"],
+          ].map(([t,d],i)=>(
+            <div key={i} style={{display:"flex",gap:12,marginBottom:8,alignItems:"flex-start"}}>
+              <span style={{fontWeight:700,color:BLUE,minWidth:180,fontSize:14}}>{t}</span>
+              <span style={{fontSize:14,lineHeight:1.6}}>{d}</span>
+            </div>
+          ))}
+
+          <div style={{marginTop:18,...style.blueNote}}>💡 Tyre pressure affects the <b>surface layers</b>. Axle load magnitude affects <b>deeper layers</b>. So a high tyre pressure can damage the surface even if the total load is low.</div>
+        </div>
+      </div>
+    ),
+    quiz: [
+      {
+        q: "An axle carries 120 kN. The standard axle is 80 kN. Using the fourth power law, calculate the Load Equivalency Factor (LEF).",
+        opts: ["1.5","3.0","5.06","16.0"],
+        correct: 2,
+        exp: "LEF = (120/80)⁴ = (1.5)⁴ = 1.5 × 1.5 × 1.5 × 1.5 = 5.0625 ≈ 5.06. This means one pass of this 120 kN axle causes 5× the damage of the standard 80 kN axle. The 4th power is what makes heavy loads so destructive."
+      },
+      {
+        q: "A road experiences severe rutting near an intersection but minimal rutting on the straight section between intersections. The same trucks use both sections. Why?",
+        opts: ["Trucks carry more load going downhill to the intersection","Speed is lower at the intersection, reducing asphalt stiffness due to viscoelasticity, causing more permanent deformation","The intersection has thinner pavement layers","Temperature is higher at intersections due to vehicle exhaust"],
+        correct: 1,
+        exp: "Asphalt is viscoelastic — stiffness depends on the rate of loading. At slow speeds (intersections), the loading rate is low, asphalt behaves more like a viscous fluid, stiffness drops, and permanent (plastic) deformation accumulates = rutting. On the open highway at speed, the high loading rate keeps stiffness high, so the asphalt deforms elastically and recovers."
+      },
+      {
+        q: "What is the critical pavement response used to predict fatigue cracking in a flexible pavement?",
+        opts: ["Vertical compressive stress at the surface","Vertical compressive strain at the top of the subgrade","Horizontal tensile strain at the bottom of the asphalt layer","Shear stress at the centre of the base course"],
+        correct: 2,
+        exp: "Fatigue cracking initiates at the BOTTOM of the asphalt layer, where the layer is in tension as it bends under load. The horizontal tensile strain (εt) at the bottom of the asphalt is the critical response for fatigue. Rutting is controlled by vertical compressive strain at the top of the subgrade — don't mix these up."
+      },
+      {
+        q: "Why does pumping failure only occur in rigid pavements, not flexible?",
+        opts: ["Rigid pavements are always placed near water tables","Rigid slabs flex under load, creating a pumping action that expels water and fine particles from beneath; flexible pavements distribute load gradually and don't create this action","Flexible pavements have no joints for water to enter","Rigid pavements have no subbase layer"],
+        correct: 1,
+        exp: "Rigid slabs act as stiff beams. When a wheel load passes over, the slab deflects and then springs back — this repeated flexing pumps water (and fine soil particles) out from under the slab through joints and cracks. Over time, voids form under the slab. Flexible pavements spread load gradually and don't create this focused pumping action."
+      }
+    ]
+  },
+  // 3 — BITUMEN
+  {
+    title: "L2: Bitumen Basics",
+    content: () => (
+      <div>
+        <div style={style.card}>
+          <div style={style.h1}>Lecture 2 — Bitumen</div>
+          <p style={style.p}>Bitumen (also called asphalt binder in North America) is the black sticky stuff that holds aggregates together. It's a <b>viscoelastic material</b> — it behaves like an elastic solid at cold/high-frequency loading but like a viscous fluid at hot/slow loading.</p>
+          <div style={style.redNote}>🔴 This dual behaviour is why temperature and speed both matter. Get this concept solid — it underpins half the course.</div>
+
+          <div style={style.h2}>🌡️ Temperature Sensitivity</div>
+          <p style={style.p}>Bitumen's behaviour changes dramatically with temperature:</p>
+          <div style={style.tableWrap}><table style={style.table}>
+            <thead><tr><th style={style.th}>Temperature</th><th style={style.th}>Bitumen behaviour</th><th style={style.th}>Risk</th></tr></thead>
+            <tbody>
+              <tr><td style={style.td}><b>High (summer)</b></td><td style={style.td}>Soft, viscous, flows</td><td style={style.td}>Rutting, shoving</td></tr>
+              <tr><td style={style.tdAlt}><b>Intermediate</b></td><td style={style.tdAlt}>Elastic/flexible</td><td style={style.tdAlt}>Fatigue cracking</td></tr>
+              <tr><td style={style.td}><b>Low (winter)</b></td><td style={style.td}>Stiff, brittle</td><td style={style.td}>Thermal/low-temp cracking</td></tr>
+            </tbody>
+          </table></div>
+
+          <div style={style.h2}>📊 The Performance Grade (PG) System</div>
+          <p style={style.p}>The <b>Superpave PG grading system</b> specifies bitumen by the temperature range it can handle. The grade tells you the <b>maximum pavement temperature</b> it can resist without rutting, and the <b>minimum temperature</b> before it cracks.</p>
+          <div style={style.eqBox}>
+            <div style={style.eqMain}>PG XX - YY</div>
+            <div style={{borderTop:"1px solid #c5d9f5",marginTop:10,paddingTop:10}}>
+              <div style={style.varRow}><span style={style.varName}>XX</span><span style={style.varDesc}>Maximum 7-day average pavement temperature (°C) the binder can handle without excessive rutting</span></div>
+              <div style={style.varRow}><span style={style.varName}>YY</span><span style={style.varDesc}>Minimum pavement design temperature (°C, always negative) before the binder becomes too brittle and cracks</span></div>
+            </div>
+          </div>
+          <div style={style.blueNote}>Example: <b>PG 64-22</b> = binder works up to 64°C (no rutting) and down to -22°C (no thermal cracking). Standard for most NZ/Aus highways at 90 kph.</div>
+
+          <div style={style.h3}>Bumping Up the Grade for Slow Traffic</div>
+          <p style={style.p}>Slow or stationary traffic causes more creep, so you need a stiffer binder (higher PG high-temp grade):</p>
+          <div style={style.tableWrap}><table style={style.table}>
+            <thead><tr><th style={style.th}>Location</th><th style={style.th}>Why</th><th style={style.th}>PG grade bump</th></tr></thead>
+            <tbody>
+              <tr><td style={style.td}>Highway at 90 kph</td><td style={style.td}>Fast loading, short contact time</td><td style={style.td}>PG 64-22 (standard)</td></tr>
+              <tr><td style={style.tdAlt}>Toll booth area</td><td style={style.tdAlt}>Vehicles slow significantly</td><td style={style.tdAlt}>PG 70-22 (+1 grade)</td></tr>
+              <tr><td style={style.td}>Weigh station</td><td style={style.td}>Vehicles nearly stopped</td><td style={style.td}>PG 76-22 (+2 grades)</td></tr>
+            </tbody>
+          </table></div>
+          <div style={style.redNote}>🔴 Also bump the high-temp grade for high traffic volumes: 10–30 × 10⁶ ESALs → +1 grade. &gt;30 × 10⁶ ESALs → +2 grades.</div>
+
+          <div style={style.h2}>🔬 PG Testing — What Tests Map to What Failures</div>
+          <p style={style.p}>The PG system uses different lab tests at different temperatures to predict real-world performance:</p>
+          <div style={style.tableWrap}><table style={style.table}>
+            <thead><tr><th style={style.th}>Test</th><th style={style.th}>Temperature</th><th style={style.th}>Property measured</th><th style={style.th}>Failure mode predicted</th></tr></thead>
+            <tbody>
+              {[
+                ["Rotational Viscometer (RV)","135°C (mixing/pumping)","Viscosity","Workability — can it be pumped and mixed?"],
+                ["Dynamic Shear Rheometer (DSR)","High temp (58–82°C)","G*/sinδ (Rutting parameter)","Permanent deformation / rutting"],
+                ["Dynamic Shear Rheometer (DSR)","Intermediate temp (~20°C)","G*·sinδ (Fatigue parameter)","Fatigue cracking"],
+                ["Bending Beam Rheometer (BBR)","-12 to -36°C","Stiffness (S) & m-value","Thermal cracking — binder flexibility at low temp"],
+                ["Direct Tension Tester (DTT)","Low temp","Failure strain","Low temperature cracking"],
+              ].map(([a,b,c,d],i)=>(
+                <tr key={i}><td style={i%2===0?style.td:style.tdAlt}><b>{a}</b></td><td style={i%2===0?style.td:style.tdAlt}>{b}</td><td style={i%2===0?style.td:style.tdAlt}><code style={{color:BLUE}}>{c}</code></td><td style={i%2===0?style.td:style.tdAlt}>{d}</td></tr>
+              ))}
+            </tbody>
+          </table></div>
+
+          <div style={style.h2}>📐 Key Bitumen Equations</div>
+          <div style={style.h3}>1. Rutting Parameter (High Temp — DSR)</div>
+          <div style={style.eqBox}>
+            <div style={style.eqMain}>G* / sin δ ≥ 1.0 kPa (original) or ≥ 2.2 kPa (RTFO-aged)</div>
+            <div style={{borderTop:"1px solid #c5d9f5",marginTop:10,paddingTop:10}}>
+              <div style={style.varRow}><span style={style.varName}>G*</span><span style={style.varDesc}>Complex shear modulus — overall stiffness of the binder (Pa)</span></div>
+              <div style={style.varRow}><span style={style.varName}>δ</span><span style={style.varDesc}>Phase angle — how much the binder behaves as viscous vs elastic. 0° = pure elastic, 90° = pure viscous</span></div>
+              <div style={style.varRow}><span style={style.varName}>G*/sinδ</span><span style={style.varDesc}><span style={{color:RED,fontWeight:700}}>HIGHER = better rut resistance.</span> You want a stiff, elastic binder at high temps. Must EXCEED the minimum.</span></div>
+            </div>
+          </div>
+
+          <div style={style.h3}>2. Fatigue Parameter (Intermediate Temp — DSR)</div>
+          <div style={style.eqBox}>
+            <div style={style.eqMain}>G* · sin δ ≤ 5000 kPa (PAV-aged)</div>
+            <div style={{borderTop:"1px solid #c5d9f5",marginTop:10,paddingTop:10}}>
+              <div style={style.varRow}><span style={style.varName}>G*·sinδ</span><span style={style.varDesc}><span style={{color:RED,fontWeight:700}}>LOWER = better fatigue resistance.</span> You want a flexible, dissipating binder at intermediate temps. Must be BELOW the maximum.</span></div>
+            </div>
+          </div>
+          <div style={style.redNote}>🔴 CRITICAL: Rutting parameter = G*/sinδ (HIGHER is better). Fatigue parameter = G*·sinδ (LOWER is better). Exam questions will switch these — know which way each goes.</div>
+
+          <div style={style.h3}>3. BBR — Low Temperature Cracking</div>
+          <div style={style.eqBox}>
+            <div style={style.eqMain}>S(60s) ≤ 300 MPa  AND  m-value ≥ 0.300</div>
+            <div style={{borderTop:"1px solid #c5d9f5",marginTop:10,paddingTop:10}}>
+              <div style={style.varRow}><span style={style.varName}>S(60s)</span><span style={style.varDesc}>Creep stiffness at 60 seconds — must be LOW (≤300 MPa) meaning the binder is still flexible enough at low temp to relax thermal stresses</span></div>
+              <div style={style.varRow}><span style={style.varName}>m-value</span><span style={style.varDesc}>Slope of the stiffness-time curve — must be HIGH (≥0.300) meaning the binder stiffness changes quickly enough to relax stress (not stay brittle)</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    quiz: [
+      {
+        q: "A bitumen sample is tested on the DSR at high temperature. The result is G*/sinδ = 0.8 kPa on the original (unaged) binder. Does it pass or fail the Superpave high-temp requirement?",
+        opts: ["Pass — 0.8 kPa is below the maximum limit","Fail — G*/sinδ must be ≥ 1.0 kPa on the original binder","Pass — this only needs to be ≥ 0.5 kPa","Fail — G*/sinδ should be ≤ 1.0 kPa not above it"],
+        correct: 1,
+        exp: "For the original (unaged) binder at high temperature, G*/sinδ must be ≥ 1.0 kPa. A result of 0.8 kPa is below this minimum — the binder is not stiff/elastic enough to resist rutting at that temperature. This binder would need to be tested at a lower temperature grade or upgraded."
+      },
+      {
+        q: "You are designing a road through a weigh station where trucks come to a near-stop. The standard highway binder for this region is PG 64-22. What would you specify for the weigh station?",
+        opts: ["PG 64-22 (no change needed)","PG 58-22 (lower the high-temp grade)","PG 76-22 (raise high-temp grade by 2)","PG 64-28 (change the low-temp grade)"],
+        correct: 2,
+        exp: "Near-stopped traffic means the load is applied very slowly — this increases creep demand on the binder significantly. For weigh stations, you increase the high-temperature grade by 2 steps: PG 64 → PG 76. The low-temperature grade stays the same because it depends on climate, not speed."
+      },
+      {
+        q: "The BBR test gives S(60s) = 250 MPa and m-value = 0.280 for a binder. Does it pass the Superpave low-temperature cracking requirement?",
+        opts: ["Yes — both values are within limits","No — stiffness is too high","No — m-value is too low, even though stiffness is acceptable","Yes — only stiffness needs to be checked for low-temp"],
+        correct: 2,
+        exp: "Both conditions must be satisfied: S(60s) ≤ 300 MPa AND m-value ≥ 0.300. Here, S = 250 MPa passes (below 300 MPa), but m-value = 0.280 fails (below 0.300). The m-value being too low means the binder stiffness doesn't relax fast enough under thermal stress, making it susceptible to low-temperature cracking. Both criteria must pass."
+      }
+    ]
+  },
+  // 4 — AGGREGATES
+  {
+    title: "L3: Aggregates",
+    content: () => (
+      <div>
+        <div style={style.card}>
+          <div style={style.h1}>Lecture 3 — Superpave Aggregates</div>
+          <p style={style.p}>Aggregates make up about <b>95% of HMA by weight</b> and about <b>85% by volume</b>. Getting aggregate properties right is critical — they control mix stiffness, durability, and resistance to both rutting and fatigue.</p>
+
+          <div style={style.h2}>📐 Aggregate Gradation — The Superpave Restricted Zone</div>
+          <p style={style.p}>Gradation = the size distribution of aggregate particles. Superpave controls this with a <b>control sieve</b> system — the gradation curve must stay within certain bands.</p>
+          <div style={style.redNote}>🔴 The key concept: Superpave introduced a "restricted zone" above the maximum density line on the gradation chart. Mixes that pass THROUGH this zone have too many fine sands and are prone to rutting. <b>Avoid humping through the restricted zone.</b></div>
+          <div style={style.blueNote}>💡 NMAS = Nominal Maximum Aggregate Size = one sieve size larger than the first sieve retaining more than 10% of material. This controls the mix type (e.g., 12.5mm NMAS wearing course).</div>
+
+          <div style={style.h2}>🔍 Aggregate Quality Tests — Superpave Criteria</div>
+          <p style={style.p}>These tests assess whether aggregates are strong and angular enough for the traffic level. All have minimum/maximum values that depend on <b>traffic (ESALs)</b> and <b>layer position</b> (surface vs. lower).</p>
+          <div style={style.tableWrap}><table style={style.table}>
+            <thead><tr><th style={style.th}>Test</th><th style={style.th}>What it measures</th><th style={style.th}>Why it matters</th><th style={style.th}>Limit direction</th></tr></thead>
+            <tbody>
+              {[
+                ["Coarse Aggregate Angularity (CAA)","% of faces with fractured faces (≥1 face, ≥2 faces)","Angular particles = better interlock = more rut resistance","MINIMUM (want MORE angularity)"],
+                ["Fine Aggregate Angularity (FAA)","Uncompacted voids in fine aggregate","High voids = angular fines = better shear resistance","MINIMUM ≥ 45% typically"],
+                ["Flat & Elongated (F&E)","% of particles with ratio ≥ 5:1 (length:thickness)","Flat particles break easily under load","MAXIMUM (want LESS flat particles)"],
+                ["Sand Equivalent (SE)","Ratio of sand height to clay+sand height after agitation","High SE = less clay coating = better binder adhesion","MINIMUM ≥ 45 typically"],
+                ["Los Angeles Abrasion","% wear after tumbling with steel balls","Soft aggregates wear down in the mix","MAXIMUM (want LESS wear)"],
+              ].map(([a,b,c,d],i)=>(
+                <tr key={i}><td style={i%2===0?style.td:style.tdAlt}><b>{a}</b></td><td style={i%2===0?style.td:style.tdAlt}>{b}</td><td style={i%2===0?style.td:style.tdAlt}>{c}</td><td style={i%2===0?style.td:style.tdAlt} style={{color: d.startsWith("MIN") ? "#2a8a4a" : RED, fontWeight:700}}>{d}</td></tr>
+              ))}
+            </tbody>
+          </table></div>
+          <div style={style.redNote}>🔴 Traffic level determines how strict the criteria are. High traffic (>30M ESALs) = tougher requirements. Low traffic (&lt;0.3M ESALs) = relaxed requirements.</div>
+
+          <div style={style.h2}>📏 Key Aggregate Size Definitions</div>
+          <div style={style.eqBox}>
+            <div style={style.eqMain}>NMAS, NMS, and Maximum Size</div>
+            <div style={{borderTop:"1px solid #c5d9f5",marginTop:10,paddingTop:10}}>
+              <div style={style.varRow}><span style={style.varName}>Maximum Size</span><span style={style.varDesc}>Smallest sieve through which 100% of the aggregate passes</span></div>
+              <div style={style.varRow}><span style={style.varName}>NMAS</span><span style={style.varDesc}>Nominal Maximum Aggregate Size = one sieve larger than the first sieve retaining &gt;10%. This names the mix (e.g., 12.5mm mix)</span></div>
+              <div style={style.varRow}><span style={style.varName}>Dust Proportion (DP)</span><span style={style.varDesc}>= % passing 0.075mm sieve / effective binder content (%). Target: 0.6–1.2. Controls the ratio of fine dust to binder — too high = brittle mix.</span></div>
+            </div>
+          </div>
+          <div style={style.redNote}>🔴 Dust Proportion (DP) equation:<br/>
+          <b>DP = P₀.₀₇₅ / Pbe</b><br/>
+          where P₀.₀₇₅ = % passing 0.075mm sieve, Pbe = effective binder content (%). Acceptable range: 0.6–1.2.</div>
+        </div>
+      </div>
+    ),
+    quiz: [
+      {
+        q: "Coarse Aggregate Angularity (CAA) has a MINIMUM requirement. Why do we want MORE angular aggregate rather than smooth/rounded?",
+        opts: ["Angular aggregates are cheaper to crush","Angular particles interlock with each other, providing better shear strength and resistance to rutting under traffic","Angular aggregates absorb more bitumen, improving bonding","Smooth aggregates are too large for standard sieves"],
+        correct: 1,
+        exp: "Angular (crushed) aggregates have rough, irregular faces that lock together when compacted, creating a strong aggregate skeleton that resists shearing and permanent deformation (rutting). Smooth, rounded particles (like river gravel) can roll past each other under load, leading to rutting. This is why high-traffic mixes require high percentages of fractured faces."
+      },
+      {
+        q: "A fine aggregate test gives a Sand Equivalent value of 38. The Superpave requirement for this traffic level is SE ≥ 45. What does this mean for the mix?",
+        opts: ["The aggregate passes — SE of 38 is above the minimum","The aggregate fails — there is too much clay/silt coating on the aggregate particles","The aggregate passes — Sand Equivalent is a maximum limit, not minimum","The aggregate needs more bitumen to compensate"],
+        correct: 1,
+        exp: "Sand Equivalent is a MINIMUM requirement — you want it HIGH. A low SE (38 < 45) means there is too much clay and fine silt coating the aggregate particles. Clay coatings reduce the bond between bitumen and aggregate, leading to stripping (water-induced damage) and reduced durability. This aggregate fails and needs to be replaced or blended with cleaner material."
+      },
+      {
+        q: "What is the Dust Proportion (DP), and what happens if it is too HIGH (e.g., DP = 1.8)?",
+        opts: ["DP measures aggregate angularity; too high means rutting","DP = % passing 0.075mm / effective binder content; too high means too much fine dust relative to binder, making the mix stiff and brittle, prone to cracking","DP measures gradation; too high means the mix is too coarse","DP measures binder content; too high means the mix will bleed"],
+        correct: 1,
+        exp: "DP = P₀.₀₇₅ / Pbe. A high DP (above 1.2) means there is a lot of fine dust relative to the binder. The dust absorbs or stiffens the binder, making the effective binder thinner and the mix more brittle — susceptible to cracking. A low DP (below 0.6) means there isn't enough dust to fill small voids, which can reduce stability."
+      }
+    ]
+  },
+  // 5 — VOLUMETRIC PROPERTIES
+  {
+    title: "L4: Volumetric Properties",
+    content: () => (
+      <div>
+        <div style={style.card}>
+          <div style={style.h1}>Lecture 4 — Volumetric Properties of HMA</div>
+          <p style={style.p}>This is one of the most <b>calculation-heavy</b> topics. Volumetric properties describe the proportions of air, aggregate, and binder in a compacted asphalt mix. Getting the volumes right is critical for durability and performance.</p>
+
+          <div style={style.h2}>🧱 The Phase Diagram</div>
+          <p style={style.p}>Think of a compacted HMA specimen as three components:</p>
+          <div style={{display:"flex",gap:4,marginBottom:16,alignItems:"stretch",height:120}}>
+            {[["Air Voids\n(Va)","#e8f0fb",BLUE],["Effective\nBinder (Vbe)","#fff3cd","#856404"],["Absorbed\nBinder (Vba)","#ffe0e0",RED],["Aggregate\n(VMA gap)","#e8f4e8","#2a6a3a"]].map(([t,bg,c],i)=>(
+              <div key={i} style={{flex:1,background:bg,border:`2px solid ${c}`,borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",textAlign:"center",fontSize:12,fontWeight:700,color:c,padding:6,whiteSpace:"pre-wrap"}}>{t}</div>
+            ))}
+          </div>
+
+          <div style={style.h2}>📐 Key Volumetric Terms & Equations</div>
+          <div style={style.redNote}>🔴 These equations come up repeatedly in every design calculation. Learn each variable individually.</div>
+
+          <div style={style.h3}>1. Voids in Mineral Aggregate (VMA)</div>
+          <div style={style.eqBox}>
+            <div style={style.eqMain}>VMA = 100 - (Gmb × Ps) / Gsb</div>
+            <div style={{borderTop:"1px solid #c5d9f5",marginTop:10,paddingTop:10}}>
+              <div style={style.varRow}><span style={style.varName}>VMA (%)</span><span style={style.varDesc}>Voids in Mineral Aggregate — total void space between aggregate particles (includes air voids AND binder space). <span style={{color:RED,fontWeight:700}}>Must exceed minimum (typically 13–15% depending on NMAS)</span></span></div>
+              <div style={style.varRow}><span style={style.varName}>Gmb</span><span style={style.varDesc}>Bulk specific gravity of the compacted mix — measured in lab on the actual specimen</span></div>
+              <div style={style.varRow}><span style={style.varName}>Ps (%)</span><span style={style.varDesc}>Aggregate content by total mix mass (as a decimal in some forms, or %)</span></div>
+              <div style={style.varRow}><span style={style.varName}>Gsb</span><span style={style.varDesc}>Bulk specific gravity of the aggregate blend</span></div>
+            </div>
+          </div>
+
+          <div style={style.h3}>2. Voids Filled with Asphalt (VFA)</div>
+          <div style={style.eqBox}>
+            <div style={style.eqMain}>VFA = 100 × (VMA - Va) / VMA</div>
+            <div style={{borderTop:"1px solid #c5d9f5",marginTop:10,paddingTop:10}}>
+              <div style={style.varRow}><span style={style.varName}>VFA (%)</span><span style={style.varDesc}>Percentage of VMA that is filled with binder (not air). <span style={{color:RED,fontWeight:700}}>Target: 65–75%</span></span></div>
+              <div style={style.varRow}><span style={style.varName}>VMA (%)</span><span style={style.varDesc}>Total voids in mineral aggregate (from above)</span></div>
+              <div style={style.varRow}><span style={style.varName}>Va (%)</span><span style={style.varDesc}>Air void content in compacted mix. <span style={{color:RED,fontWeight:700}}>Superpave design target: 4.0% at Ndesign</span></span></div>
+            </div>
+          </div>
+
+          <div style={style.h3}>3. Air Voids (Va)</div>
+          <div style={style.eqBox}>
+            <div style={style.eqMain}>Va = 100 × (Gmm - Gmb) / Gmm</div>
+            <div style={{borderTop:"1px solid #c5d9f5",marginTop:10,paddingTop:10}}>
+              <div style={style.varRow}><span style={style.varName}>Va (%)</span><span style={style.varDesc}>Air void content — the percentage of the mix that is air. Too high = permeable (water/air damage). Too low = unstable (rutting).</span></div>
+              <div style={style.varRow}><span style={style.varName}>Gmm</span><span style={style.varDesc}>Maximum theoretical specific gravity (Rice gravity) — specific gravity of the mix with ZERO air voids. Measured in lab (ASTM D2041).</span></div>
+              <div style={style.varRow}><span style={style.varName}>Gmb</span><span style={style.varDesc}>Bulk specific gravity of the compacted specimen — actual density including air voids.</span></div>
+            </div>
+          </div>
+          <div style={style.redNote}>🔴 The gap between Gmm and Gmb IS the air voids. If Gmb = Gmm, you have zero air voids (over-compacted, unstable). If Gmb is much less than Gmm, you have too much air (permeable, weak).</div>
+
+          <div style={style.h3}>4. Effective Binder Content (Vbe & Pbe)</div>
+          <div style={style.eqBox}>
+            <div style={style.eqMain}>Pbe = Pb - (Pba × Ps / 100)</div>
+            <div style={{borderTop:"1px solid #c5d9f5",marginTop:10,paddingTop:10}}>
+              <div style={style.varRow}><span style={style.varName}>Pbe (%)</span><span style={style.varDesc}>Effective binder content — the binder NOT absorbed into aggregate pores. This is what coats and fills voids.</span></div>
+              <div style={style.varRow}><span style={style.varName}>Pb (%)</span><span style={style.varDesc}>Total binder content (% of total mix mass)</span></div>
+              <div style={style.varRow}><span style={style.varName}>Pba (%)</span><span style={style.varDesc}>Absorbed binder content — binder that gets sucked into aggregate pores and does nothing useful</span></div>
+              <div style={style.varRow}><span style={style.varName}>Ps (%)</span><span style={style.varDesc}>Aggregate content (% of total mix mass)</span></div>
+            </div>
+          </div>
+
+          <div style={style.h3}>5. %Gmm — Compaction Check</div>
+          <div style={style.eqBox}>
+            <div style={style.eqMain}>%Gmm = (Gmb / Gmm) × 100</div>
+            <div style={{borderTop:"1px solid #c5d9f5",marginTop:10,paddingTop:10}}>
+              <div style={style.varRow}><span style={style.varName}>%Gmm at Nini</span><span style={style.varDesc}><span style={{color:RED,fontWeight:700}}>Must be ≤ 89%</span> — if too high, mix compacts too easily in the field = unstable</span></div>
+              <div style={style.varRow}><span style={style.varName}>%Gmm at Ndesign</span><span style={style.varDesc}><span style={{color:RED,fontWeight:700}}>Must equal 96%</span> (= Va of 4%)</span></div>
+              <div style={style.varRow}><span style={style.varName}>%Gmm at Nmax</span><span style={style.varDesc}><span style={{color:RED,fontWeight:700}}>Must be ≥ 98%</span> — ensures mix won't over-compact in service</span></div>
+            </div>
+          </div>
+          <div style={style.redNote}>🔴 The three gyration levels (Nini, Ndesign, Nmax) test if the mix compacts too easily early (Nini), hits 4% air at design level (Ndesign), and doesn't over-compact in service (Nmax).</div>
+        </div>
+      </div>
+    ),
+    quiz: [
+      {
+        q: "A compacted HMA specimen has Gmb = 2.380 and Gmm = 2.480. What is the air void content (Va)?",
+        opts: ["Va = 3.2%","Va = 4.0%","Va = 4.8%","Va = 5.2%"],
+        correct: 1,
+        exp: "Va = 100 × (Gmm - Gmb) / Gmm = 100 × (2.480 - 2.380) / 2.480 = 100 × 0.100 / 2.480 = 4.03% ≈ 4.0%. This is exactly the Superpave design target! The gap between Gmm and Gmb tells you how much of the mix volume is air."
+      },
+      {
+        q: "A mix has VMA = 14.5% and Va = 4.0%. Calculate VFA.",
+        opts: ["VFA = 27.6%","VFA = 72.4%","VFA = 58.0%","VFA = 89.5%"],
+        correct: 1,
+        exp: "VFA = 100 × (VMA - Va) / VMA = 100 × (14.5 - 4.0) / 14.5 = 100 × 10.5 / 14.5 = 72.4%. This is within the Superpave target range of 65–75%. VFA tells you what fraction of the aggregate void space is filled with binder — too low means the binder film is thin and the mix will be brittle."
+      },
+      {
+        q: "At the initial gyration count (Nini) during SGC compaction, %Gmm = 91.5%. What does this indicate about the mix?",
+        opts: ["The mix is acceptable — above 89% shows good workability","The mix fails the Nini requirement — it compacts too easily, indicating it will be unstable and susceptible to rutting in the field","The mix needs more binder to reach 89%","The mix is under-compacted and needs more gyrations"],
+        correct: 1,
+        exp: "At Nini, %Gmm must be ≤ 89%. A value of 91.5% means the mix compacts too quickly at low gyration counts — in the field, traffic will compact it further, pushing air voids below 2%, which causes instability and rutting (the mix 'shoves' under traffic). This mix design fails and needs adjustment (usually less binder or coarser aggregate)."
+      }
+    ]
+  },
+];
+
+// ── QUIZ BLOCK ────────────────────────────────────────────────────────────────
+function QuizBlock({ questions }) {
+  const [answers, setAnswers] = useState({});
+  const [revealed, setRevealed] = useState({});
+  const [score, setScore] = useState(null);
+
+  if (!questions || questions.length === 0) return null;
+
+  const handleSelect = (qi, oi) => {
+    if (revealed[qi]) return;
+    setAnswers(a => ({...a, [qi]: oi}));
+    setScore(null);
+  };
+  const handleReveal = (qi) => {
+    if (answers[qi] === undefined) return;
+    setRevealed(r => ({...r, [qi]: true}));
+  };
+  const handleRevealAll = () => {
+    const allAnswered = questions.every((_,i) => answers[i] !== undefined);
+    if (!allAnswered) return;
+    const r = {};
+    questions.forEach((_,i) => { r[i] = true; });
+    setRevealed(r);
+    const s = questions.filter((_,i) => answers[i] === questions[i].correct).length;
+    setScore(s);
+  };
+
+  return (
+    <div style={style.card}>
+      <div style={{...style.h2, marginTop:0}}>🧠 Quiz Time</div>
+      <p style={{...style.p, fontSize:14, color:"#555"}}>Select your answer, then click Reveal to see if you're right. The midterm changes the wording — understand <em>why</em>, not just what.</p>
+      {questions.map((q, qi) => (
+        <div key={qi} style={style.quizCard}>
+          <div style={style.quizQ}><span style={style.sectionBadge}>Q{qi+1}</span>{q.q}</div>
+          {q.opts.map((opt, oi) => (
+            <button key={oi}
+              style={style.optBtn(answers[qi]===oi, oi===q.correct, revealed[qi])}
+              onClick={() => handleSelect(qi, oi)}
+            >
+              <span style={{marginRight:8,opacity:0.5}}>{["A","B","C","D"][oi]}.</span>{opt}
+            </button>
+          ))}
+          {!revealed[qi] && (
+            <button
+              style={{...style.btn(answers[qi]!==undefined), marginTop:8, fontSize:13, padding:"7px 16px", opacity: answers[qi]===undefined?0.5:1}}
+              onClick={() => handleReveal(qi)}
+              disabled={answers[qi]===undefined}
+            >
+              {answers[qi]===undefined ? "Select an answer first" : "Reveal Answer"}
+            </button>
+          )}
+          {revealed[qi] && (
+            <div style={answers[qi]===q.correct ? style.explanation : style.wrongExp}>
+              <b>{answers[qi]===q.correct ? "✅ Correct!" : "❌ Not quite."}</b><br/><br/>{q.exp}
+            </div>
+          )}
+        </div>
+      ))}
+      {questions.length > 1 && (
+        <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}>
+          <button style={style.btn(true)} onClick={handleRevealAll}>
+            Reveal All & Score
+          </button>
+          {score !== null && (
+            <span style={{fontWeight:700, fontSize:16, color: score===questions.length ? "#2a8a4a" : score >= questions.length/2 ? BLUE : RED}}>
+              {score}/{questions.length} — {score===questions.length?"Perfect! 🎉":score>=questions.length/2?"Good, review the ones you missed":"Review these concepts again"}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── APP ────────────────────────────────────────────────────────────────────────
+export default function App() {
+  const [current, setCurrent] = useState(0);
+  const [visited, setVisited] = useState(new Set([0]));
+
+  const goTo = (i) => {
+    setCurrent(i);
+    setVisited(v => new Set([...v, i]));
+    window.scrollTo({top:0,behavior:"smooth"});
+  };
+  const next = () => { if (current < sections.length-1) goTo(current+1); };
+  const prev = () => { if (current > 0) goTo(current-1); };
+
+  const sec = sections[current];
+
+  return (
+    <div style={style.app}>
+      {/* Header */}
+      <div style={{marginBottom:20}}>
+        <div style={{fontSize:13,fontWeight:700,color:BLUE,letterSpacing:1,textTransform:"uppercase",marginBottom:4}}>ENCN415 — Pavement Engineering</div>
+        <div style={{fontSize:22,fontWeight:700,color:BLACK}}>{sec.title}</div>
+      </div>
+
+      {/* Progress bar */}
+      <div style={style.progress}>
+        {sections.map((s,i) => (
+          <div key={i} title={s.title} style={style.dot(i===current, visited.has(i) && i!==current)} onClick={()=>goTo(i)} />
+        ))}
+        <span style={{fontSize:12,color:"#888",marginLeft:4,alignSelf:"center"}}>{current+1}/{sections.length}</span>
+      </div>
+
+      {/* Content */}
+      {sec.content()}
+
+      {/* Quiz */}
+      <QuizBlock questions={sec.quiz} />
+
+      {/* Navigation */}
+      <div style={style.navRow}>
+        <button style={style.btn(false)} onClick={prev} disabled={current===0}>← Previous</button>
+        <button style={style.btn(true)} onClick={next} disabled={current===sections.length-1}>Next Topic →</button>
+      </div>
+      <div style={{height:40}} />
+    </div>
+  );
+}
