@@ -1,157 +1,106 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>ENCN415 — Pavement Engineering Study Guide</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
-<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --blue:     #1a4fa0;
-    --blue-mid: #2563be;
-    --blue-lt:  #dbeafe;
-    --blue-xlt: #eff6ff;
-    --red:      #b91c1c;
-    --red-lt:   #fef2f2;
-    --red-mid:  #dc2626;
-    --green:    #166534;
-    --green-lt: #f0fdf4;
-    --green-mid:#16a34a;
-    --amber:    #92400e;
-    --amber-lt: #fffbeb;
-    --ink:      #1c1917;
-    --ink-soft: #44403c;
-    --border:   #e2e8f0;
-    --bg:       #f8f7f4;
-    --card:     #ffffff;
-    --mono:     'JetBrains Mono', monospace;
-    --serif:    'Lora', Georgia, serif;
-    --display:  'Playfair Display', 'Lora', serif;
-    --radius:   12px;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
-    --shadow:    0 4px 16px rgba(26,79,160,.08), 0 1px 4px rgba(0,0,0,.04);
-    --shadow-lg: 0 8px 32px rgba(26,79,160,.12), 0 2px 8px rgba(0,0,0,.06);
-  }
-
-  html { scroll-behavior: smooth; }
-
-  body {
-    background: var(--bg);
-    font-family: var(--serif);
-    color: var(--ink);
-    line-height: 1.7;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  /* ── Page chrome ── */
-  #root { min-height: 100vh; }
-
-  /* ── Typography resets ── */
-  h1,h2,h3,h4 { font-family: var(--display); }
-  code, pre, .mono { font-family: var(--mono); }
-
-  /* ── Scrollbar ── */
-  ::-webkit-scrollbar { width: 7px; }
-  ::-webkit-scrollbar-track { background: var(--bg); }
-  ::-webkit-scrollbar-thumb { background: var(--blue-mid); border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--blue); }
-
-  /* ── Buttons ── */
-  button { transition: all .18s ease; }
-  button:not(:disabled):hover { filter: brightness(1.08); transform: translateY(-1px); box-shadow: var(--shadow); }
-  button:not(:disabled):active { transform: translateY(0); }
-  button:disabled { opacity: .38; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
-
-  /* ── Animations ── */
-  @keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .animate-in { animation: fadeSlideIn .35s ease both; }
-
-  @keyframes pulse-border {
-    0%,100% { box-shadow: 0 0 0 0 rgba(26,79,160,.25); }
-    50%      { box-shadow: 0 0 0 6px rgba(26,79,160,0); }
-  }
-
-  /* ── Tables ── */
-  table { border-radius: var(--radius); overflow: hidden; }
-
-  /* ── Selection ── */
-  ::selection { background: var(--blue-lt); color: var(--blue); }
-
-  /* ── Print ── */
-  @media print {
-    body { background: white; }
-    button { display: none; }
-  }
-</style>
-</head>
-<body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState } = React;
+import { useState, useEffect } from "react";
 
 // ═══════════════════════════════════════════════════════════════
-// STYLE CONSTANTS
+// DESIGN TOKENS
 // ═══════════════════════════════════════════════════════════════
+const B   = "#1e40af";   // primary blue
+const BM  = "#2563be";   // mid blue
+const BL  = "#dbeafe";   // light blue
+const BXL = "#eff6ff";   // xtra light blue
+const R   = "#b91c1c";   // red
+const RL  = "#fef2f2";   // light red
+const G   = "#166534";   // green
+const GL  = "#f0fdf4";   // light green
+const AM  = "#92400e";   // amber
+const AL  = "#fffbeb";   // light amber
+const K   = "#111827";   // near black
+const KS  = "#374151";   // soft black
+const LB  = BL;           // legacy alias
+const LR  = RL;           // legacy alias
+const LG  = GL;           // legacy alias
 
-// ── Premium design tokens (synced with CSS variables) ──────────
-const B   = "#1a4fa0";   // --blue
-const BM  = "#2563be";   // --blue-mid
-const BL  = "#dbeafe";   // --blue-lt
-const BXL = "#eff6ff";   // --blue-xlt
-const R   = "#b91c1c";   // --red
-const RL  = "#fef2f2";   // --red-lt
-const G   = "#166534";   // --green
-const GL  = "#f0fdf4";   // --green-lt
-const GM  = "#16a34a";   // --green-mid
-const AM  = "#92400e";   // --amber
-const AL  = "#fffbeb";   // --amber-lt
-const K   = "#1c1917";   // --ink
-const KS  = "#44403c";   // --ink-soft
-// Legacy aliases
-const LB = BL; const LR = RL; const LG = GL;
+const FONT_BODY = "Georgia, 'Times New Roman', serif";
+const FONT_DISPLAY = "Georgia, 'Times New Roman', serif";
+const FONT_MONO = "'Courier New', Courier, monospace";
 
-
+// ═══════════════════════════════════════════════════════════════
+// STYLES
+// ═══════════════════════════════════════════════════════════════
 const s={
-  app:{fontFamily:"'Georgia',serif",maxWidth:860,margin:"0 auto",padding:"20px 14px",background:"#f7f9fd",minHeight:"100vh",color:K},
-  card:{background:"#fff",borderRadius:12,padding:"24px 26px 20px",boxShadow:"0 2px 14px rgba(26,86,160,0.08)",marginBottom:20,border:"1px solid #e3ecfa"},
-  h1:{fontSize:24,fontWeight:700,color:B,marginBottom:6,letterSpacing:"-0.3px"},
-  h2:{fontSize:18,fontWeight:700,color:B,marginTop:22,marginBottom:8,borderBottom:`2px solid ${LB}`,paddingBottom:5},
-  h3:{fontSize:15,fontWeight:700,color:B,marginTop:16,marginBottom:6},
-  p:{lineHeight:1.75,marginBottom:10,fontSize:14.5,color:K},
-  rn:{background:LR,borderLeft:`4px solid ${R}`,padding:"9px 13px",borderRadius:"0 8px 8px 0",marginBottom:12,color:R,fontSize:13.5,fontWeight:600,lineHeight:1.5},
-  bn:{background:LB,borderLeft:`4px solid ${B}`,padding:"9px 13px",borderRadius:"0 8px 8px 0",marginBottom:12,color:B,fontSize:13.5,lineHeight:1.5},
-  eq:{background:"#f4f8ff",border:`1px solid #c5d9f5`,borderRadius:10,padding:"13px 16px",marginBottom:14},
-  eqm:{fontSize:17,fontWeight:700,color:B,marginBottom:8,fontFamily:"monospace"},
-  vr:{display:"flex",gap:8,alignItems:"flex-start",marginBottom:5,fontSize:13.5},
-  vn:{fontWeight:700,color:B,minWidth:110,fontFamily:"monospace",fontSize:13,flexShrink:0},
-  vd:{color:K,lineHeight:1.5},
-  tw:{overflowX:"auto",marginBottom:14},
-  tbl:{width:"100%",borderCollapse:"collapse",fontSize:13.5},
-  th:{background:B,color:"#fff",padding:"7px 11px",textAlign:"left",fontWeight:700},
-  td:{padding:"7px 11px",borderBottom:"1px solid #e3ecfa",verticalAlign:"top"},
-  tda:{padding:"7px 11px",borderBottom:"1px solid #e3ecfa",verticalAlign:"top",background:"#f4f8ff"},
-  tag:{display:"inline-block",background:LB,color:B,borderRadius:20,padding:"2px 11px",fontSize:12,fontWeight:700,marginRight:5,marginBottom:5},
-  nav:{display:"flex",gap:10,marginTop:22,flexWrap:"wrap"},
-  btn:(p)=>({padding:"9px 22px",borderRadius:8,border:"none",cursor:"pointer",fontWeight:700,fontSize:14,fontFamily:"'Georgia',serif",background:p?B:LB,color:p?"#fff":B,transition:"all 0.2s"}),
-  rbtn:{padding:"7px 18px",borderRadius:8,border:`2px solid ${R}`,cursor:"pointer",fontWeight:700,fontSize:13,fontFamily:"'Georgia',serif",background:"#fff",color:R,transition:"all 0.2s"},
-  qcard:{background:"#f8fbff",border:`2px solid #c5d9f5`,borderRadius:12,padding:"18px 20px",marginBottom:14},
-  qq:{fontWeight:700,fontSize:15,marginBottom:12,color:K,lineHeight:1.5},
-  ob:(sel,corr,rev)=>({display:"block",width:"100%",textAlign:"left",padding:"9px 13px",borderRadius:8,marginBottom:7,border:`2px solid ${rev?(corr?"#2a8a4a":sel?R:"#dde6f5"):sel?B:"#dde6f5"}`,background:rev?(corr?LG:sel?LR:"#fff"):sel?LB:"#fff",cursor:rev?"default":"pointer",fontSize:13.5,fontFamily:"'Georgia',serif",color:K,fontWeight:(sel||(rev&&corr))?700:400,transition:"all 0.2s"}),
-  exp:{background:LG,border:`1px solid ${G}`,borderRadius:8,padding:"11px 13px",marginTop:8,fontSize:13.5,color:"#1a5c30",lineHeight:1.6},
-  wexp:{background:LR,border:`1px solid ${R}`,borderRadius:8,padding:"11px 13px",marginTop:8,fontSize:13.5,color:R,lineHeight:1.6},
-  badge:{display:"inline-block",fontSize:12,fontWeight:700,color:"#fff",background:B,borderRadius:4,padding:"2px 7px",marginRight:7},
-  tf:{display:"inline-block",background:"#fff3cd",color:"#856404",borderRadius:4,padding:"1px 7px",fontSize:11,fontWeight:700,marginLeft:6,border:"1px solid #ffc107"},
+  app:{fontFamily:FONT_BODY,maxWidth:880,margin:"0 auto",padding:"24px 16px",background:"#f5f4f0",minHeight:"100vh",color:K},
+  card:{background:"#fff",borderRadius:14,padding:"26px 28px 22px",boxShadow:"0 4px 20px rgba(30,64,175,.09),0 1px 4px rgba(0,0,0,.05)",marginBottom:22,border:"1px solid #e0e7ff"},
+  h1:{fontSize:25,fontWeight:700,fontFamily:FONT_DISPLAY,color:B,marginBottom:8,letterSpacing:"-0.3px",lineHeight:1.25},
+  h2:{fontSize:18,fontWeight:700,fontFamily:FONT_DISPLAY,color:B,marginTop:26,marginBottom:10,borderBottom:"2.5px solid "+BL,paddingBottom:7,lineHeight:1.3},
+  h3:{fontSize:15,fontWeight:700,fontFamily:FONT_BODY,color:B,marginTop:18,marginBottom:7,fontStyle:"italic"},
+  p:{lineHeight:1.8,marginBottom:11,fontSize:15,color:K,fontFamily:FONT_BODY},
+  rn:{background:RL,borderLeft:"4px solid "+R,padding:"11px 16px",borderRadius:"0 10px 10px 0",marginBottom:14,color:R,fontSize:13.5,fontWeight:600,lineHeight:1.6,fontFamily:FONT_BODY,boxShadow:"0 2px 8px rgba(185,28,28,.07)"},
+  bn:{background:BXL,borderLeft:"4px solid "+BM,padding:"11px 16px",borderRadius:"0 10px 10px 0",marginBottom:14,color:B,fontSize:13.5,lineHeight:1.6,fontFamily:FONT_BODY,boxShadow:"0 2px 8px rgba(37,99,190,.07)"},
+  eq:{background:"linear-gradient(135deg,#eef2ff 0%,#e0e7ff 100%)",border:"1.5px solid #c7d2fe",borderRadius:12,padding:"15px 18px",marginBottom:16,boxShadow:"0 2px 10px rgba(30,64,175,.07)"},
+  eqm:{fontSize:16,fontWeight:700,color:B,marginBottom:10,fontFamily:FONT_MONO,letterSpacing:"0.4px",background:"rgba(30,64,175,.06)",padding:"5px 10px",borderRadius:6,display:"inline-block"},
+  vr:{display:"flex",gap:10,alignItems:"flex-start",marginBottom:7,fontSize:14},
+  vn:{fontWeight:700,color:B,minWidth:120,fontFamily:FONT_MONO,fontSize:12,flexShrink:0,background:"rgba(30,64,175,.08)",borderRadius:4,padding:"2px 7px",letterSpacing:"0.2px"},
+  vd:{color:K,lineHeight:1.6,fontFamily:FONT_BODY},
+  tw:{overflowX:"auto",marginBottom:16,borderRadius:12,boxShadow:"0 2px 10px rgba(0,0,0,.06)",border:"1px solid #e0e7ff"},
+  tbl:{width:"100%",borderCollapse:"collapse",fontSize:13.5,fontFamily:FONT_BODY},
+  th:{background:B,color:"#fff",padding:"9px 13px",textAlign:"left",fontWeight:700,fontFamily:FONT_DISPLAY,fontSize:13.5},
+  td:{padding:"9px 13px",borderBottom:"1px solid #e0e7ff",verticalAlign:"top",color:K},
+  tda:{padding:"9px 13px",borderBottom:"1px solid #e0e7ff",verticalAlign:"top",background:"#f5f7ff",color:K},
+  tag:{display:"inline-block",background:BL,color:B,borderRadius:20,padding:"2px 12px",fontSize:12,fontWeight:700,marginRight:5,marginBottom:5,fontFamily:FONT_BODY},
+  nav:{display:"flex",gap:12,marginTop:24,flexWrap:"wrap"},
+  btn:(p)=>({padding:"10px 26px",borderRadius:9,border:"none",cursor:"pointer",fontWeight:700,fontSize:14,fontFamily:FONT_BODY,background:p?B:BL,color:p?"#fff":B,boxShadow:p?"0 3px 10px rgba(30,64,175,.28)":"none",letterSpacing:"0.2px"}),
+  rbtn:{padding:"8px 20px",borderRadius:9,border:"2px solid "+R,cursor:"pointer",fontWeight:700,fontSize:13.5,fontFamily:FONT_BODY,background:"#fff",color:R},
+  qcard:{background:"linear-gradient(135deg,#f8faff 0%,#f0f4ff 100%)",border:"2px solid #c7d2fe",borderRadius:13,padding:"20px 22px",marginBottom:16,boxShadow:"0 2px 10px rgba(30,64,175,.06)"},
+  qq:{fontWeight:700,fontSize:15.5,marginBottom:14,color:K,lineHeight:1.55,fontFamily:FONT_BODY},
+  ob:(sel,corr,rev)=>({display:"block",width:"100%",textAlign:"left",padding:"10px 15px",borderRadius:9,marginBottom:8,border:`2px solid ${rev?(corr?"#16a34a":sel?"#b91c1c":"#e0e7ff"):sel?B:"#e0e7ff"}`,background:rev?(corr?GL:sel?RL:"#fff"):sel?BL:"#fff",cursor:rev?"default":"pointer",fontSize:14,fontFamily:FONT_BODY,color:K,fontWeight:(sel||(rev&&corr))?700:400,boxShadow:sel&&!rev?"0 2px 8px rgba(30,64,175,.15)":"none"}),
+  exp:{background:GL,border:"1.5px solid #16a34a",borderRadius:10,padding:"13px 15px",marginTop:10,fontSize:14,color:G,lineHeight:1.65,fontFamily:FONT_BODY,boxShadow:"0 2px 8px rgba(22,163,74,.09)"},
+  wexp:{background:RL,border:"1.5px solid "+R,borderRadius:10,padding:"13px 15px",marginTop:10,fontSize:14,color:R,lineHeight:1.65,fontFamily:FONT_BODY,boxShadow:"0 2px 8px rgba(185,28,28,.09)"},
+  badge:{display:"inline-block",fontSize:11.5,fontWeight:700,color:"#fff",background:B,borderRadius:5,padding:"2px 8px",marginRight:8,fontFamily:FONT_MONO,letterSpacing:"0.3px"},
+  tf:{display:"inline-block",background:AL,color:AM,borderRadius:5,padding:"1px 8px",fontSize:11,fontWeight:700,marginLeft:6,border:"1px solid #fbbf24",fontFamily:FONT_MONO},
 };
+
+// ═══════════════════════════════════════════════════════════════
+// COUNTDOWN TIMER
+// ═══════════════════════════════════════════════════════════════
+function Countdown(){
+  const [now,setNow]=useState(new Date());
+  useEffect(()=>{const t=setInterval(()=>setNow(new Date()),1000);return()=>clearInterval(t);},[]);
+
+  const targets=[
+    {label:"Quiz 2",emoji:"📝",date:new Date("2026-04-24T23:59:00"),color:R,bg:RL,border:"#fca5a5"},
+    {label:"Midterm Test",emoji:"🎯",date:new Date("2026-04-30T23:59:00"),color:B,bg:BXL,border:"#93c5fd"},
+  ];
+
+  const fmt=(ms)=>{
+    if(ms<=0) return {d:0,h:0,m:0,s:0,done:true};
+    const s=Math.floor(ms/1000);
+    return{d:Math.floor(s/86400),h:Math.floor((s%86400)/3600),m:Math.floor((s%3600)/60),s:s%60,done:false};
+  };
+
+  return(
+    <div style={{display:"flex",gap:14,marginBottom:24,flexWrap:"wrap"}}>
+      {targets.map((t,i)=>{
+        const diff=t.date-now;
+        const {d,h,m,s,done}=fmt(diff);
+        return(
+          <div key={i} style={{flex:1,minWidth:200,background:t.bg,border:"2px solid "+t.border,borderRadius:14,padding:"14px 18px",boxShadow:"0 3px 12px rgba(0,0,0,.08)"}}>
+            <div style={{fontSize:13,fontWeight:700,color:t.color,marginBottom:8,fontFamily:FONT_DISPLAY,letterSpacing:"0.3px",textTransform:"uppercase"}}>{t.emoji} {t.label}</div>
+            {done
+              ? <div style={{fontSize:18,fontWeight:700,color:t.color}}>TODAY — Good luck! 🙏</div>
+              : <div style={{display:"flex",gap:10,alignItems:"baseline"}}>
+                  {[["d","days"],["h","hrs"],["m","min"],["s","sec"]].map(([k,lbl])=>(
+                    <div key={k} style={{textAlign:"center"}}>
+                      <div style={{fontSize:28,fontWeight:700,color:t.color,fontFamily:FONT_MONO,lineHeight:1,minWidth:38,textAlign:"center",background:"rgba(255,255,255,.7)",borderRadius:8,padding:"4px 6px"}}>{String(k==="d"?d:k==="h"?h:k==="m"?m:s).padStart(2,"0")}</div>
+                      <div style={{fontSize:10,color:t.color,fontWeight:600,marginTop:2,fontFamily:FONT_BODY,opacity:.7}}>{lbl}</div>
+                    </div>
+                  ))}
+                </div>
+            }
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 // ═══════════════════════════════════════════════════════════════
 // REUSABLE COMPONENTS
@@ -159,7 +108,7 @@ const s={
 const EqBox=({main,vars})=>(
   <div style={s.eq}>
     <div style={s.eqm}>{main}</div>
-    <div style={{borderTop:"1px solid #c5d9f5",marginTop:8,paddingTop:8}}>
+    <div style={{borderTop:"1px solid #c7d2fe",marginTop:10,paddingTop:10}}>
       {vars.map(([n,d],i)=><div key={i} style={s.vr}><span style={s.vn}>{n}</span><span style={s.vd} dangerouslySetInnerHTML={{__html:d}}/></div>)}
     </div>
   </div>
@@ -183,11 +132,8 @@ function QuizBlock({questions,resetKey}){
   const [ans,setAns]=useState({});
   const [rev,setRev]=useState({});
   const [score,setScore]=useState(null);
-  
-  // Reset when resetKey changes
   const [prevKey,setPrevKey]=useState(resetKey);
   if(resetKey!==prevKey){setPrevKey(resetKey);setAns({});setRev({});setScore(null);}
-  
   if(!questions||!questions.length) return null;
   const sel=(qi,oi)=>{if(rev[qi])return;setAns(a=>({...a,[qi]:oi}));setScore(null);};
   const reveal=(qi)=>{if(ans[qi]===undefined)return;setRev(r=>({...r,[qi]:true}));};
@@ -199,34 +145,28 @@ function QuizBlock({questions,resetKey}){
   return(
     <div style={s.card}>
       <div style={{...s.h2,marginTop:0}}>🧠 Practice Questions</div>
-      <p style={{...s.p,color:"#555",fontSize:13}}>These are styled like your actual quiz. Select an answer then hit Reveal. The midterm changes wording — understand the <em>why</em>.</p>
+      <p style={{...s.p,color:KS,fontSize:13}}>Styled like your actual quiz. Select an answer, hit Reveal. The midterm changes the wording — understand the <em>why</em>.</p>
       {questions.map((q,qi)=>(
         <div key={qi} style={s.qcard}>
-          <div style={s.qq}>
-            <span style={s.badge}>Q{qi+1}</span>
-            {q.tf&&<span style={s.tf}>TRUE/FALSE</span>}
-            {q.q}
-          </div>
+          <div style={s.qq}><span style={s.badge}>Q{qi+1}</span>{q.tf&&<span style={s.tf}>TRUE/FALSE</span>}{q.q}</div>
           {q.opts.map((o,oi)=>(
             <button key={oi} style={s.ob(ans[qi]===oi,oi===q.c,rev[qi])} onClick={()=>sel(qi,oi)}>
-              <span style={{opacity:.5,marginRight:7}}>{"ABCD"[oi]}.</span>{o}
+              <span style={{opacity:.45,marginRight:8,fontFamily:FONT_MONO}}>{"ABCD"[oi]}.</span>{o}
             </button>
           ))}
-          {!rev[qi]&&<button style={{...s.btn(ans[qi]!==undefined),marginTop:6,fontSize:13,padding:"6px 14px",opacity:ans[qi]===undefined?.45:1}} onClick={()=>reveal(qi)} disabled={ans[qi]===undefined}>{ans[qi]===undefined?"Select answer first →":"Reveal Answer"}</button>}
-          {rev[qi]&&<div style={ans[qi]===q.c?s.exp:s.wexp}><b>{ans[qi]===q.c?"✅ Correct!":"❌ Incorrect."}</b><br/><br/><span dangerouslySetInnerHTML={{__html:q.exp}}/></div>}
+          {!rev[qi]&&<button style={{...s.btn(ans[qi]!==undefined),marginTop:6,fontSize:13,padding:"7px 16px",opacity:ans[qi]===undefined?.4:1}} onClick={()=>reveal(qi)} disabled={ans[qi]===undefined}>{ans[qi]===undefined?"Select an answer first →":"Reveal Answer ✓"}</button>}
+          {rev[qi]&&<div style={ans[qi]===q.c?s.exp:s.wexp}><strong>{ans[qi]===q.c?"✅ Correct!":"❌ Not quite."}</strong><br/><br/><span dangerouslySetInnerHTML={{__html:q.exp}}/></div>}
         </div>
       ))}
       <div style={{display:"flex",gap:12,alignItems:"center",flexWrap:"wrap",marginTop:8}}>
         <button style={s.btn(true)} onClick={revAll}>Submit All & Score</button>
-        {score!==null&&<span style={{fontWeight:700,fontSize:15,color:score===questions.length?G:score>=questions.length/2?B:R}}>{score}/{questions.length} — {score===questions.length?"Perfect! 🎉":score>=questions.length/2?"Good work — review missed ones":"Review this section again"}</span>}
+        {score!==null&&<span style={{fontWeight:700,fontSize:15.5,color:score===questions.length?G:score>=questions.length/2?B:R}}>{score}/{questions.length} — {score===questions.length?"Perfect 🎉":score>=questions.length/2?"Good — review the misses":"Review this section again"}</span>}
       </div>
     </div>
   );
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ALL SECTIONS
-// ═══════════════════════════════════════════════════════════════
+
 const SECTIONS=[
 
 // ── 0 WELCOME ──────────────────────────────────────────────────
@@ -1316,10 +1256,11 @@ quiz:[
 
 ];// end SECTIONS
 
+
 // ═══════════════════════════════════════════════════════════════
 // MAIN APP
 // ═══════════════════════════════════════════════════════════════
-function App(){
+export default function App(){
   const [cur,setCur]=useState(0);
   const [visited,setVisited]=useState(new Set([0]));
   const [resetKeys,setResetKeys]=useState(()=>Object.fromEntries(SECTIONS.map((_,i)=>[i,0])));
@@ -1328,242 +1269,76 @@ function App(){
   const next=()=>{if(cur<SECTIONS.length-1)goTo(cur+1);};
   const prev=()=>{if(cur>0)goTo(cur-1);};
   const resetQuiz=()=>setResetKeys(k=>({...k,[cur]:k[cur]+1}));
-
   const sec=SECTIONS[cur];
-  const totalQ=SECTIONS.reduce((a,s)=>a+(s.quiz?.length||0),0);
+  const totalQ=SECTIONS.reduce((a,s2)=>a+(s2.quiz?.length||0),0);
+  const doneQ=SECTIONS.slice(0,cur).reduce((a,s2)=>a+(s2.quiz?.length||0),0);
 
   return(
     <div style={s.app}>
+
+      {/* Countdown */}
+      <Countdown/>
+
       {/* Header */}
-      <div style={{marginBottom:16}}>
-        <div style={{fontSize:12,fontWeight:700,color:B,letterSpacing:1.5,textTransform:"uppercase",marginBottom:3}}>ENCN415 — Pavement Engineering</div>
-        <div style={{fontSize:20,fontWeight:700,color:K}}>{sec.icon} {sec.title}</div>
-        <div style={{fontSize:12,color:"#888",marginTop:3}}>Section {cur+1} of {SECTIONS.length}  ·  {totalQ} total practice questions</div>
+      <div style={{marginBottom:18}}>
+        <div style={{fontSize:11,fontWeight:700,color:B,letterSpacing:2,textTransform:"uppercase",marginBottom:4,fontFamily:FONT_MONO}}>ENCN415 — Pavement Engineering</div>
+        <div style={{fontSize:22,fontWeight:700,color:K,fontFamily:FONT_DISPLAY,letterSpacing:"-0.3px"}}>{sec.icon} {sec.title}</div>
+        <div style={{fontSize:12,color:KS,marginTop:4,fontFamily:FONT_BODY}}>Section {cur+1} of {SECTIONS.length} · {totalQ} total practice questions</div>
       </div>
 
       {/* Progress bar */}
-      <div style={{display:"flex",gap:4,marginBottom:20,flexWrap:"wrap",alignItems:"center"}}>
+      <div style={{background:"#e0e7ff",borderRadius:99,height:8,marginBottom:20,overflow:"hidden",boxShadow:"inset 0 1px 3px rgba(0,0,0,.1)"}}>
+        <div style={{background:"linear-gradient(90deg,"+B+","+BM+")",height:"100%",width:`${(visited.size/SECTIONS.length)*100}%`,borderRadius:99,transition:"width .4s ease",boxShadow:"0 1px 4px rgba(30,64,175,.3)"}}/>
+      </div>
+      <div style={{display:"flex",gap:4,marginBottom:22,flexWrap:"wrap"}}>
         {SECTIONS.map((s2,i)=>(
-          <div key={i} title={s2.title} onClick={()=>goTo(i)} style={{width:28,height:7,borderRadius:4,background:i===cur?B:visited.has(i)?"#5a8fd0":"#dde6f5",cursor:"pointer",transition:"background 0.2s",flexShrink:0}}/>
+          <div key={i} title={s2.title} onClick={()=>goTo(i)} style={{
+            width:30,height:8,borderRadius:99,
+            background:i===cur?"#f59e0b":visited.has(i)?B:"#dde6f5",
+            cursor:"pointer",transition:"all .2s",
+            boxShadow:i===cur?"0 0 0 3px rgba(245,158,11,.3)":visited.has(i)?"0 1px 3px rgba(30,64,175,.3)":"none",
+            transform:i===cur?"scaleY(1.6)":"none"
+          }}/>
         ))}
-        <span style={{fontSize:11,color:"#888",marginLeft:6}}>{Math.round(visited.size/SECTIONS.length*100)}% visited</span>
       </div>
 
       {/* Content */}
       {sec.content()}
 
       {/* Quiz */}
-      {sec.quiz && sec.quiz.length > 0 && (
+      {sec.quiz&&sec.quiz.length>0&&(
         <>
           <QuizBlock questions={sec.quiz} resetKey={resetKeys[cur]}/>
-          <div style={{marginBottom:14}}>
-            <button style={s.rbtn} onClick={resetQuiz}>🔄 Reset Questions (Try Again)</button>
+          <div style={{marginBottom:16}}>
+            <button style={s.rbtn} onClick={resetQuiz}>🔄 Reset Questions — Try Again</button>
           </div>
         </>
       )}
 
-      {/* Navigation */}
+      {/* Nav */}
       <div style={s.nav}>
         <button style={s.btn(false)} onClick={prev} disabled={cur===0}>← Previous</button>
         <button style={s.btn(true)} onClick={next} disabled={cur===SECTIONS.length-1}>Next Section →</button>
       </div>
 
-      {/* Section jump menu */}
-      <div style={{marginTop:24,padding:"14px 16px",background:"#fff",borderRadius:10,border:"1px solid #e3ecfa"}}>
-        <div style={{fontWeight:700,color:B,fontSize:13,marginBottom:10}}>Jump to section:</div>
-        <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+      {/* Jump menu */}
+      <div style={{marginTop:26,padding:"16px 18px",background:"#fff",borderRadius:12,border:"1px solid #e0e7ff",boxShadow:"0 2px 10px rgba(30,64,175,.06)"}}>
+        <div style={{fontWeight:700,color:B,fontSize:13,marginBottom:10,fontFamily:FONT_DISPLAY}}>Jump to section:</div>
+        <div style={{display:"flex",flexWrap:"wrap",gap:7}}>
           {SECTIONS.map((s2,i)=>(
-            <button key={i} onClick={()=>goTo(i)} style={{padding:"4px 10px",borderRadius:6,border:`1px solid ${i===cur?B:"#dde6f5"}`,background:i===cur?B:"#fff",color:i===cur?"#fff":visited.has(i)?B:"#888",cursor:"pointer",fontSize:12,fontFamily:"'Georgia',serif",fontWeight:i===cur?700:400}}>{s2.icon} {s2.title}</button>
+            <button key={i} onClick={()=>goTo(i)} style={{
+              padding:"5px 12px",borderRadius:7,
+              border:"1.5px solid "+(i===cur?B:visited.has(i)?"#c7d2fe":"#e0e7ff"),
+              background:i===cur?B:"#fff",
+              color:i===cur?"#fff":visited.has(i)?B:KS,
+              cursor:"pointer",fontSize:12.5,fontFamily:FONT_BODY,
+              fontWeight:i===cur?700:400,
+              boxShadow:i===cur?"0 2px 8px rgba(30,64,175,.25)":"none"
+            }}>{s2.icon} {s2.title}</button>
           ))}
         </div>
       </div>
-      <div style={{height:40}}/>
+      <div style={{height:48}}/>
     </div>
   );
 }
-
-
-// ── Override s with premium styles ─────────────────────────────
-Object.assign(s, {
-  app: {
-    fontFamily:"'Lora','Georgia',serif",
-    maxWidth:880,margin:"0 auto",
-    padding:"28px 18px",
-    background:"#f8f7f4",
-    minHeight:"100vh",
-    color:"#1c1917"
-  },
-  card: {
-    background:"#fff",
-    borderRadius:14,
-    padding:"28px 30px 24px",
-    boxShadow:"0 4px 16px rgba(26,79,160,.08),0 1px 4px rgba(0,0,0,.04)",
-    marginBottom:22,
-    border:"1px solid #e2e8f0",
-    fontFamily:"'Lora','Georgia',serif"
-  },
-  h1: {
-    fontSize:26,fontWeight:800,
-    fontFamily:"'Playfair Display','Lora',serif",
-    color:B,marginBottom:8,letterSpacing:"-0.4px",lineHeight:1.2
-  },
-  h2: {
-    fontSize:18,fontWeight:700,
-    fontFamily:"'Playfair Display','Lora',serif",
-    color:B,marginTop:26,marginBottom:10,
-    borderBottom:"2px solid #dbeafe",paddingBottom:7,lineHeight:1.3
-  },
-  h3: {
-    fontSize:15,fontWeight:700,
-    fontFamily:"'Lora','Georgia',serif",
-    color:B,marginTop:18,marginBottom:7,fontStyle:"italic"
-  },
-  p: {
-    lineHeight:1.78,marginBottom:11,
-    fontSize:15,color:"#1c1917",
-    fontFamily:"'Lora','Georgia',serif"
-  },
-  rn: {
-    background:"#fef2f2",
-    borderLeft:"4px solid #b91c1c",
-    padding:"11px 15px",
-    borderRadius:"0 10px 10px 0",
-    marginBottom:14,
-    color:"#b91c1c",
-    fontSize:14,fontWeight:600,lineHeight:1.6,
-    fontFamily:"'Lora','Georgia',serif",
-    boxShadow:"0 2px 8px rgba(185,28,28,.06)"
-  },
-  bn: {
-    background:"#eff6ff",
-    borderLeft:"4px solid #2563be",
-    padding:"11px 15px",
-    borderRadius:"0 10px 10px 0",
-    marginBottom:14,
-    color:"#1a4fa0",
-    fontSize:14,lineHeight:1.6,
-    fontFamily:"'Lora','Georgia',serif",
-    boxShadow:"0 2px 8px rgba(37,99,190,.06)"
-  },
-  eq: {
-    background:"linear-gradient(135deg,#f0f6ff 0%,#e8f0ff 100%)",
-    border:"1px solid #c5d9f5",
-    borderRadius:12,
-    padding:"16px 18px",
-    marginBottom:16,
-    boxShadow:"0 2px 8px rgba(26,79,160,.06)"
-  },
-  eqm: {
-    fontSize:17,fontWeight:700,
-    color:B,marginBottom:10,
-    fontFamily:"'JetBrains Mono',monospace",
-    letterSpacing:"0.3px"
-  },
-  vr: {display:"flex",gap:10,alignItems:"flex-start",marginBottom:7,fontSize:14},
-  vn: {
-    fontWeight:700,color:B,minWidth:120,
-    fontFamily:"'JetBrains Mono',monospace",
-    fontSize:12.5,flexShrink:0,
-    background:"rgba(26,79,160,.07)",
-    borderRadius:4,padding:"2px 6px",
-    letterSpacing:"0.2px"
-  },
-  vd: {color:"#1c1917",lineHeight:1.55,fontFamily:"'Lora','Georgia',serif"},
-  tw: {overflowX:"auto",marginBottom:16,borderRadius:12,boxShadow:"0 2px 8px rgba(0,0,0,.05)"},
-  tbl: {width:"100%",borderCollapse:"collapse",fontSize:13.5,fontFamily:"'Lora','Georgia',serif"},
-  th: {
-    background:B,color:"#fff",
-    padding:"9px 13px",textAlign:"left",
-    fontWeight:700,fontFamily:"'Playfair Display',serif",
-    fontSize:13.5,letterSpacing:"0.2px"
-  },
-  td: {padding:"9px 13px",borderBottom:"1px solid #e2e8f0",verticalAlign:"top",color:"#1c1917"},
-  tda:{padding:"9px 13px",borderBottom:"1px solid #e2e8f0",verticalAlign:"top",background:"#f5f8ff",color:"#1c1917"},
-  tag: {
-    display:"inline-block",
-    background:"#dbeafe",color:B,
-    borderRadius:20,padding:"2px 12px",
-    fontSize:12,fontWeight:700,
-    marginRight:5,marginBottom:5,
-    fontFamily:"'Lora',serif"
-  },
-  nav: {display:"flex",gap:12,marginTop:24,flexWrap:"wrap"},
-  btn: (p) => ({
-    padding:"10px 26px",borderRadius:9,border:"none",
-    cursor:"pointer",fontWeight:700,fontSize:14.5,
-    fontFamily:"'Lora','Georgia',serif",
-    background:p?B:"#dbeafe",
-    color:p?"#fff":B,
-    letterSpacing:"0.2px",
-    boxShadow:p?"0 2px 8px rgba(26,79,160,.25)":"none"
-  }),
-  rbtn: {
-    padding:"8px 20px",borderRadius:9,
-    border:"2px solid #b91c1c",
-    cursor:"pointer",fontWeight:700,fontSize:13.5,
-    fontFamily:"'Lora','Georgia',serif",
-    background:"#fff",color:"#b91c1c",
-    letterSpacing:"0.2px"
-  },
-  qcard: {
-    background:"linear-gradient(135deg,#f8fbff 0%,#f0f6ff 100%)",
-    border:"2px solid #c5d9f5",
-    borderRadius:13,padding:"20px 22px",marginBottom:16,
-    boxShadow:"0 2px 8px rgba(26,79,160,.05)"
-  },
-  qq: {
-    fontWeight:700,fontSize:15.5,marginBottom:14,
-    color:"#1c1917",lineHeight:1.5,
-    fontFamily:"'Lora','Georgia',serif"
-  },
-  ob: (sel,corr,rev) => ({
-    display:"block",width:"100%",textAlign:"left",
-    padding:"10px 15px",borderRadius:9,marginBottom:8,
-    border:`2px solid ${rev?(corr?"#16a34a":sel?"#b91c1c":"#dde6f5"):sel?B:"#dde6f5"}`,
-    background:rev?(corr?"#f0fdf4":sel?"#fef2f2":"#fff"):sel?"#dbeafe":"#fff",
-    cursor:rev?"default":"pointer",
-    fontSize:14,fontFamily:"'Lora','Georgia',serif",
-    color:"#1c1917",
-    fontWeight:(sel||(rev&&corr))?700:400,
-    boxShadow:sel&&!rev?"0 2px 8px rgba(26,79,160,.12)":"none"
-  }),
-  exp: {
-    background:"#f0fdf4",
-    border:"1px solid #16a34a",
-    borderRadius:10,padding:"13px 15px",
-    marginTop:10,fontSize:14,
-    color:"#166534",lineHeight:1.65,
-    fontFamily:"'Lora','Georgia',serif",
-    boxShadow:"0 2px 8px rgba(22,163,74,.08)"
-  },
-  wexp: {
-    background:"#fef2f2",
-    border:"1px solid #b91c1c",
-    borderRadius:10,padding:"13px 15px",
-    marginTop:10,fontSize:14,
-    color:"#b91c1c",lineHeight:1.65,
-    fontFamily:"'Lora','Georgia',serif",
-    boxShadow:"0 2px 8px rgba(185,28,28,.08)"
-  },
-  badge: {
-    display:"inline-block",fontSize:12,fontWeight:700,
-    color:"#fff",background:B,borderRadius:5,
-    padding:"2px 8px",marginRight:8,
-    fontFamily:"'JetBrains Mono',monospace",
-    letterSpacing:"0.3px"
-  },
-  tf: {
-    display:"inline-block",
-    background:"#fffbeb",color:"#92400e",
-    borderRadius:5,padding:"1px 8px",
-    fontSize:11,fontWeight:700,marginLeft:6,
-    border:"1px solid #fbbf24",
-    fontFamily:"'JetBrains Mono',monospace"
-  },
-});
-
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(<App/>);
-</script>
-</body>
-</html>
